@@ -944,6 +944,12 @@ class Element:
 
         self._data[channel] = {}
         self._data[channel]['blueprint'] = newprint
+        
+    def getBluePrint(self, channel) -> BluePrint:
+        """
+        Gets a blueprint of the element from the specified channel.
+        """
+        return self._data[channel]['blueprint']
 
     def addArray(self, channel: Union[int, str], waveform: np.ndarray,
                  SR: int, **kwargs) -> None:
