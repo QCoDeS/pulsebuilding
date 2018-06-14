@@ -2,7 +2,6 @@
 
 language: python
 python:
-  - "3.5"
   - "3.6"
 
 # be a good guy and potentially save time
@@ -15,17 +14,21 @@ notifications:
 branches:
   only:
     - master
+    - version1.0
 
 install:
   - pip install --upgrade pip
   - pip install -r test_requirements.txt
   - pip install .
 
-# command sequence to run tests
+# command sequence to run tests, including executing the
+# tutorial notebooks
 script:
   - mypy broadbean --ignore-missing-imports
   - cd tests
   - pytest
+  - cd ../docs
+  - make execute
 
 after_success:
   - cd ..
