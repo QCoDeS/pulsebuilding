@@ -7,8 +7,7 @@ setup(
     # We might as well require what we know will work
     # although older numpy and matplotlib version will probably work too
     install_requires=['numpy>=1.12.1',
-                      'matplotlib>=2.0.1',
-                      'schema'],
+                      'matplotlib>=2.0.1'],
 
     author='William H.P. Nielsen',
     author_email='whpn@mailbox.org',
@@ -25,7 +24,7 @@ setup(
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
-        'Programming Language :: Python :: 3.6'
+        'Programming Language :: Python :: 3.5'
         ],
 
     keywords='Pulsebuilding signal processing arbitrary waveforms',

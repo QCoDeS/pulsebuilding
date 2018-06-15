@@ -7,7 +7,6 @@ from hypothesis import given, settings
 import hypothesis.strategies as hst
 
 import broadbean as bb
-from broadbean.sequence import Sequence, SequencingError
 
 ramp = bb.PulseAtoms.ramp
 sine = bb.PulseAtoms.sine
@@ -25,11 +24,11 @@ def protosequence1():
     th.setSR(SR)
 
     wiggle1 = bb.BluePrint()
-    wiggle1.insertSegment(0, sine, args=(4e6, 0.5, 0, 0), dur=25e-6)
+    wiggle1.insertSegment(0, sine, args=(4e6, 0.5, 0), dur=25e-6)
     wiggle1.setSR(SR)
 
     wiggle2 = bb.BluePrint()
-    wiggle2.insertSegment(0, sine, args=(8e6, 0.5, 0, 0), dur=25e-6)
+    wiggle2.insertSegment(0, sine, args=(8e6, 0.5, 0), dur=25e-6)
     wiggle2.setSR(SR)
 
     elem1 = bb.Element()
@@ -40,7 +39,7 @@ def protosequence1():
     elem2.addBluePrint(1, th)
     elem2.addBluePrint(2, wiggle2)
 
-    seq = Sequence()
+    seq = bb.Sequence()
     seq.addElement(1, elem1)
     seq.addElement(2, elem2)
     seq.setSR(SR)
@@ -77,7 +76,7 @@ def should_raise_sequencingerror(wait, nrep, jump_to, goto, num_elms):
     """
     if wait not in [0, 1]:
         return True
-    if nrep not in range(0, 16384):
+    if nrep not in range(0, num_elms+1):
         return True
     if jump_to not in range(-1, num_elms+1):
         return True
@@ -99,7 +98,7 @@ def test_awg_output_validations(protosequence1, wait, nrep, jump_to, goto):
     N = protosequence1.length_sequenceelements
 
     if should_raise_sequencingerror(wait, nrep, jump_to, goto, N):
-        with pytest.raises(SequencingError):
+        with pytest.raises(bb.SequencingError):
             protosequence1.outputForAWGFile()
     else:
         protosequence1.outputForAWGFile()

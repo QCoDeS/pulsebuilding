@@ -6,7 +6,7 @@
 import pytest
 import broadbean as bb
 import numpy as np
-from broadbean.element import ElementDurationError, Element
+from broadbean.broadbean import ElementDurationError
 from hypothesis import given, settings
 import hypothesis.strategies as hst
 
@@ -15,7 +15,7 @@ sine = bb.PulseAtoms.sine
 tophat_SR = 2000
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def blueprint_tophat():
     """
     Return a blueprint consisting of three slopeless ramps forming something
@@ -29,47 +29,27 @@ def blueprint_tophat():
 
     return th
 
-
-@pytest.fixture
-def mixed_element(blueprint_tophat):
-    """
-    An element with blueprints and arrays
-    """
-
-    noise = np.random.randn(blueprint_tophat.points)
-    wiggle = bb.BluePrint()
-    wiggle.insertSegment(0, sine, args=(1, 10, 0, 0), dur=2.5)
-    wiggle.setSR(blueprint_tophat.SR)
-
-    elem = Element()
-    elem.addBluePrint(1, blueprint_tophat)
-    elem.addArray(2, noise, blueprint_tophat.SR)
-    elem.addBluePrint(3, wiggle)
-
-    return elem
-
-
 ##################################################
 # TEST BARE INITIALISATION
 
 
 def test_bare_init(blueprint_tophat):
-    elem = Element()
+    elem = bb.Element()
     elem.addBluePrint(1, blueprint_tophat)
     assert list(elem._data.keys()) == [1]
 
 
 def test_equality_true(blueprint_tophat):
-    elem1 = Element()
-    elem2 = Element()
+    elem1 = bb.Element()
+    elem2 = bb.Element()
     elem1.addBluePrint(1, blueprint_tophat)
     elem2.addBluePrint(1, blueprint_tophat)
     assert elem1 == elem2
 
 
 def test_equality_false(blueprint_tophat):
-    elem1 = Element()
-    elem2 = Element()
+    elem1 = bb.Element()
+    elem2 = bb.Element()
     elem1.addBluePrint(1, blueprint_tophat)
     elem2.addBluePrint(1, blueprint_tophat)
     elem1.changeArg(1, 'ramp', 'start', 2)
@@ -77,13 +57,13 @@ def test_equality_false(blueprint_tophat):
 
 
 def test_copy(blueprint_tophat):
-    elem1 = Element()
+    elem1 = bb.Element()
     elem1.addBluePrint(1, blueprint_tophat)
     elem2 = elem1.copy()
     assert elem1 == elem2
 
 ##################################################
-# Adding things to the Element goes hand in hand
+# Adding things to the Element, goes hand in hand
 # with duration validation
 
 
@@ -96,10 +76,10 @@ def test_addArray():
     m1 = np.zeros(N)
     m2 = np.ones(N)
 
-    elem = Element()
-    elem.addArray(1, wfm, SR, m1=m1, m2=m2)
-    elem.addArray('2', wfm, SR, m1=m1)
-    elem.addArray('readout_channel', wfm, SR, m2=m2)
+    elem = bb.Element()
+    elem.addArray(1, wfm, SR, m1, m2)
+    elem.addArray(2, wfm, SR, m1)
+    elem.addArray(3, wfm, SR, m2=m2)
 
     elem.validateDurations()
 
@@ -111,7 +91,7 @@ def test_addArray():
         elem.validateDurations()
 
     with pytest.raises(ValueError):
-        elem.addArray(1, wfm, SR, m1=m1[:-1])
+        elem.addArray(1, wfm, SR, m1[:-1])
 
     with pytest.raises(ValueError):
         elem.addArray(2, wfm, SR, m2=m2[3:])
@@ -128,7 +108,7 @@ def test_invalid_durations(SR1, SR2, N, M):
 
     # differing sample rates
 
-    elem = Element()
+    elem = bb.Element()
     bp = bb.BluePrint()
 
     bp.insertSegment(0, ramp, (0, 0), dur=N/SR2)
@@ -153,7 +133,7 @@ def test_invalid_durations(SR1, SR2, N, M):
     bp2.insertSegment(0, ramp, (0, 2), dur=M/SR1)
     bp2.setSR(SR1)
 
-    elem = Element()
+    elem = bb.Element()
     elem.addBluePrint(1, bp1)
     elem.addBluePrint(2, bp2)
 
@@ -163,42 +143,13 @@ def test_invalid_durations(SR1, SR2, N, M):
         with pytest.raises(ElementDurationError):
             elem.validateDurations()
 
-
-def test_applyDelays(mixed_element):
-
-    delays = [1e-1, 0, 0]
-
-    assert mixed_element.duration == 2.5
-
-    arrays_before = mixed_element.getArrays()
-    assert len(arrays_before[1]['wfm']) == 5000
-
-    with pytest.raises(ValueError):
-        mixed_element._applyDelays([-0.1, 3, 4])
-
-    with pytest.raises(ValueError):
-        mixed_element._applyDelays([0, 1])
-
-    element = mixed_element.copy()
-    element._applyDelays(delays)
-
-    arrays_after = element.getArrays()
-    assert len(arrays_after[1]['wfm']) == 5200
-
-    assert mixed_element.duration == 2.5
-    assert element.duration == 2.6
-
-    assert element._data[1]['blueprint'].length_segments == 4
-    assert element._data[3]['blueprint'].length_segments == 2
-
-
 ##################################################
 # Input validation
 
 
 @pytest.mark.parametrize('improper_bp', [{1: 2}, 'blueprint', bb.BluePrint()])
 def test_input_fail1(improper_bp):
-    elem = Element()
+    elem = bb.Element()
     with pytest.raises(ValueError):
         elem.addBluePrint(1, improper_bp)
 
@@ -209,7 +160,7 @@ def test_input_fail1(improper_bp):
 @settings(max_examples=25)
 @given(SR=hst.integers(1), N=hst.integers(2))
 def test_points(SR, N):
-    elem = Element()
+    elem = bb.Element()
 
     with pytest.raises(KeyError):
         elem.points
@@ -225,7 +176,7 @@ def test_points(SR, N):
 
     assert elem.points == N
 
-    elem = Element()
+    elem = bb.Element()
     bp = bb.BluePrint()
 
     bp.insertSegment(0, ramp, (0, 0), dur=N/SR)
